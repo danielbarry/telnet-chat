@@ -1,4 +1,4 @@
-#define PORT 8080
+#define PORT 6666
 #define MAX_READ 80
 
 #define MSG_BANNER (\
