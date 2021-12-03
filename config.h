@@ -5,6 +5,7 @@
 "| ------------------------------\n"  \
 "| Welcome to Telnet Chat!\n"         \
 "| NOTE: All IPs displayed in chat!\n"\
+"| WARN: All data unencrypted!\n"     \
 "| Type `/h` for more info.\n"        \
 "| ------------------------------\n\n"\
 )
