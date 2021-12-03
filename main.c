@@ -1,3 +1,9 @@
+#include "config.h"
+
+/* Function declaration */
+void server_init(int port);
+void server_service();
+
 /**
  * main()
  *
@@ -8,4 +14,13 @@
  * @param argv The command line arguments.
  **/
 int main(int argc, char** argv){
+  /* Setup default values for variables */
+  int port = PORT;
+  /* TODO: Parse the command line parameters. */
+  /* Initialise the server */
+  server_init(port);
+  /* Run main server loop */
+  while(1){
+    server_service();
+  }
 }
