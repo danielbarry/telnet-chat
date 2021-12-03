@@ -16,6 +16,7 @@
 
 /* Private function declaration */
 int server_readFromClient(int fd, int maxRead);
+char* server_fdToIp(int fd);
 void server_writeToAll_start(int efd);
 void server_writeToAll(int efd, char* msg);
 void server_writeToAll_end(int efd);
@@ -164,6 +165,16 @@ int server_readFromClient(int fd, int maxRead){
     }
     return 0;
   }
+}
+
+char* server_fdToIp(int fd){
+  struct sockaddr_in clientName;
+  socklen_t size = sizeof(clientName);
+  if(getpeername(fd, (struct sockaddr*)&clientName, &size) < 0){
+    perror("socket_info");
+    return "0.0.0.0";
+  }
+  return inet_ntoa(clientName.sin_addr);
 }
 
 /**
