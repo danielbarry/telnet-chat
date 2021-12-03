@@ -21,7 +21,9 @@ char* server_fdToIp(int fd);
 void server_writeToAll_start(int efd);
 void server_writeToAll(int efd, char* msg);
 void server_writeToAll_end(int efd);
+void server_writeToClient_start(int fd);
 void server_writeToClient(int fd, char* msg);
+void server_writeToClient_end(int fd);
 void server_writeNoticeAll(int efd, char* notice, char* data);
 void server_disconnectClient(int fd);
 
@@ -193,12 +195,10 @@ char* server_fdToIp(int fd){
  * you want the message to be sent to all sockets.
  **/
 void server_writeToAll_start(int efd){
-  int opt = 1;
   for(int i = 0; i < FD_SETSIZE; ++i){
     if(FD_ISSET(i, &active_fd_set)){
       if(i >= 0 && i != socketfd && i != efd){
-        /* Set TCP to cork mode and prevent it from sending a packet */
-        setsockopt(i, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
+        server_writeToClient_start(i);
       }
     }
   }
@@ -232,22 +232,27 @@ void server_writeToAll(int efd, char* msg){
  * you want the message to be sent to all sockets.
  **/
 void server_writeToAll_end(int efd){
-  int opt = 0;
   for(int i = 0; i < FD_SETSIZE; ++i){
     if(FD_ISSET(i, &active_fd_set)){
       if(i >= 0 && i != socketfd && i != efd){
-        /* Set TCP to cork mode and prevent it from sending a packet */
-        setsockopt(i, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
+        server_writeToClient_end(i);
       }
     }
   }
 }
 
+/* TODO */
+void server_writeToClient_start(int fd){
+  int opt = 1;
+  /* Set TCP to cork mode and prevent it from sending a packet */
+  setsockopt(fd, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
+}
+
 /**
  * server_writeToClient()
  *
- * Write a message to the client. NOTE: See server_writeToClientStart() and
- * server_writeToClientEnd() if sending multiple messages to a socket.
+ * Write a message to the client. NOTE: See server_writeToClient_start() and
+ * server_writeToClient_end() if sending multiple messages to a socket.
  *
  * @param fd The socket to be written to.
  * @param msg The message to be sent.
@@ -257,6 +262,13 @@ void server_writeToClient(int fd, char* msg){
   if(send(fd, msg, util_strLen(msg), 0) < 0){
     perror("send");
   }
+}
+
+/* TODO */
+void server_writeToClient_end(int fd){
+  int opt = 0;
+  /* Set TCP to cork mode and prevent it from sending a packet */
+  setsockopt(fd, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
 }
 
 /* TODO */
