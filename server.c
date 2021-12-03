@@ -9,6 +9,7 @@
 #include <stdlib.h>
 //#include <sys/types.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "config.h"
@@ -155,9 +156,18 @@ int server_readFromClient(int fd, int maxRead){
         }
       }
       buff[n] = '\0';
+      /* Prepare shared values */
+      char tstr[12];
+      time_t secs = time(0);
+      struct tm* local = localtime(&secs);
+      sprintf(tstr, "[%02d:%02d:%02d] ", local->tm_hour, local->tm_min, local->tm_sec);
+      char* ip = server_fdToIp(fd);
+      fprintf(stderr, "%s%s: %s \n", tstr, ip, buff);
       /* Send to all connected clients */
-      fprintf(stderr, "Server: got message: '%s'\n", buff);
       server_writeToAll_start(fd);
+      server_writeToAll(fd, tstr);
+      server_writeToAll(fd, ip);
+      server_writeToAll(fd, ": ");
       server_writeToAll(fd, buff);
       server_writeToAll(fd, "\n");
       server_writeToAll_end(fd);
