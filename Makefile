@@ -1,13 +1,15 @@
+FLAGS = -std=c99
+
 all : server
 
 server : main.o server.o
-	cc -o server main.o server.o
+	cc $(FLAGS) -o server main.o server.o
 
 main.o : main.c config.h
-	cc -c main.c
+	cc $(FLAGS) -c main.c
 
 server.o : server.c
-	cc -c server.c
+	cc $(FLAGS) -c server.c
 
 clean :
 	rm main.o server.o
