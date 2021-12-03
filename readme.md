@@ -32,6 +32,20 @@ The server uses [`TCP_CORK`](https://baus.net/on-tcp_cork/), meaning that
 messages get buffered in the kernel rather than user space. Ultimately this
 saves on bandwidth and means that I don't have to implement my own buffering.
 
+## Building
+
+**NOTE:** This has been designed and tested on Unix systems, specifically
+Linux.
+
+To build, simply run:
+
+    make clean
+    make
+
+To run you can use:
+
+    ./server
+
 ## Future
 
 Some ideas about where to take this in the future:
