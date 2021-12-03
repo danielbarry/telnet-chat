@@ -8,20 +8,20 @@
 #include <sys/socket.h>
 //#include <unistd.h>
 
+#include "server.h"
+
+/* Private function declaration */
+int server_readFromClient(int fd, int maxRead);
+
 /* Variable declaration */
 int socketfd;
+int maxClientRead;
 fd_set active_fd_set;
 fd_set read_fd_set;
 
-/**
- * server_init()
- *
- * Initialize the server.
- *
- * @param port The port to be binded.
- **/
-void server_init(int port){
+void server_init(int port, int maxRead){
   struct sockaddr_in name;
+  maxClientRead = maxRead;
   /* Create the socket */
   socketfd = socket(PF_INET, SOCK_STREAM, 0);
   if(socketfd < 0){
@@ -50,11 +50,6 @@ void server_init(int port){
   FD_SET(socketfd, &active_fd_set);
 }
 
-/**
- * server_service()
- *
- * Service the clients connected to the server.
- **/
 void server_service(){
   /* Ensure the socket file descriptor is valid */
   if(socketfd < 0){
@@ -91,12 +86,50 @@ void server_service(){
         );
         FD_SET(new, &active_fd_set);
       }else{
-//        /* Data arriving on an already-connected socket */
-//        if(read_from_client(i) < 0){
-//          close (i);
-//          FD_CLR (i, &active_fd_set);
-//        }
+        /* Data arriving on an already-connected socket */
+        if(server_readFromClient(i, maxClientRead) < 0){
+          close(i);
+          FD_CLR(i, &active_fd_set);
+        }
       }
     }
+  }
+  /* TODO: Service all the sockets with output data. */
+}
+
+/**
+ * server_readFromClient()
+ *
+ * Read data from the client.
+ *
+ * @param fd The socket to be read from.
+ * @param maxRead The maximum data to be read.
+ * @return -1 on error, otherwise 0.
+ **/
+int server_readFromClient(int fd, int maxRead){
+  char buff[maxRead + 1];
+  int n = read(fd, buff, maxRead);
+  if(n < 0){
+    /* Read error */
+    perror("read");
+    exit(EXIT_FAILURE);
+  }else if(n == 0){
+    /* End-of-file */
+    return -1;
+  }else{
+    /* Sanitize data to ASCII and remove line endings */
+    char r = '\0';
+    for(int i = n - 1; i >= 0; i--){
+      char c = buff[i];
+      if(c < ' ' || c > '~'){
+        buff[i] = r;
+      }else{
+        r = ' ';
+      }
+    }
+    buff[n] = '\0';
+    /* TODO: Add data to be sent to clients. */
+    fprintf(stderr, "Server: got message: '%s'\n", buff);
+    return 0;
   }
 }

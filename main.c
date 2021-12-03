@@ -1,8 +1,5 @@
 #include "config.h"
-
-/* Function declaration */
-void server_init(int port);
-void server_service();
+#include "server.h"
 
 /**
  * main()
@@ -16,9 +13,10 @@ void server_service();
 int main(int argc, char** argv){
   /* Setup default values for variables */
   int port = PORT;
+  int maxRead = MAX_READ;
   /* TODO: Parse the command line parameters. */
   /* Initialise the server */
-  server_init(port);
+  server_init(port, maxRead);
   /* Run main server loop */
   while(1){
     server_service();
