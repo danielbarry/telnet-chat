@@ -144,7 +144,7 @@ int server_readFromClient(int fd, int maxRead){
           /* Do nothing */
           break;
       }
-    }else{
+    }else if(buff[0] >= ' ' && buff[0] <= '~'){
       /* Sanitize data to ASCII and remove line endings */
       char r = '\0';
       for(int i = n - 1; i >= 0; i--){
