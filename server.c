@@ -89,7 +89,7 @@ void server_service(){
         }
         fprintf(
           stderr,
-          "Server: connect from host %s, port %hd.\n",
+          "Server: connect from host %s::%hd\n",
           inet_ntoa(clientName.sin_addr),
           ntohs(clientName.sin_port)
         );
