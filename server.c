@@ -1,21 +1,30 @@
+#include "server.h"
+
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 //#include <netdb.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 //#include <sys/types.h>
 #include <sys/socket.h>
-//#include <unistd.h>
+#include <unistd.h>
 
-#include "server.h"
+#include "config.h"
+#include "util.h"
 
 /* Private function declaration */
 int server_readFromClient(int fd, int maxRead);
+void server_writeToAll_start(int efd);
+void server_writeToAll(int efd, char* msg);
+void server_writeToAll_end(int efd);
+void server_writeToClient(int fd, char* msg);
+void server_disconnectClient(int fd);
 
 /* Variable declaration */
 int socketfd;
-int maxClientRead;
+int maxClientRead = MAX_READ;
 fd_set active_fd_set;
 fd_set read_fd_set;
 
@@ -70,9 +79,8 @@ void server_service(){
     if(FD_ISSET(i, &read_fd_set)){
       if(i == socketfd){
         /* Connection request on original socket */
-        int new;
         socklen_t size = sizeof(clientName);
-        new = accept(socketfd, (struct sockaddr*)&clientName, &size);
+        int new = accept(socketfd, (struct sockaddr*)&clientName, &size);
         if(new < 0){
           socketfd = -1;
           perror("accept");
@@ -85,11 +93,11 @@ void server_service(){
           ntohs(clientName.sin_port)
         );
         FD_SET(new, &active_fd_set);
+        server_writeToClient(new, MSG_BANNER);
       }else{
         /* Data arriving on an already-connected socket */
         if(server_readFromClient(i, maxClientRead) < 0){
-          close(i);
-          FD_CLR(i, &active_fd_set);
+          server_disconnectClient(i);
         }
       }
     }
@@ -117,19 +125,130 @@ int server_readFromClient(int fd, int maxRead){
     /* End-of-file */
     return -1;
   }else{
-    /* Sanitize data to ASCII and remove line endings */
-    char r = '\0';
-    for(int i = n - 1; i >= 0; i--){
-      char c = buff[i];
-      if(c < ' ' || c > '~'){
-        buff[i] = r;
-      }else{
-        r = ' ';
+    /* Decide what to do with data */
+    if(buff[0] == '/'){
+      switch(buff[1]){
+        case 'b' :
+          server_writeToClient(fd, MSG_BANNER);
+          break;
+        case 'h' :
+        case '?' :
+          server_writeToClient(fd, MSG_HELP);
+          break;
+        case 'q' :
+          server_writeToClient(fd, MSG_EXIT);
+          server_disconnectClient(fd);
+          break;
+        default :
+          /* Do nothing */
+          break;
       }
+    }else{
+      /* Sanitize data to ASCII and remove line endings */
+      char r = '\0';
+      for(int i = n - 1; i >= 0; i--){
+        char c = buff[i];
+        if(c < ' ' || c > '~'){
+          buff[i] = r;
+        }else{
+          r = ' ';
+        }
+      }
+      buff[n] = '\0';
+      /* Send to all connected clients */
+      fprintf(stderr, "Server: got message: '%s'\n", buff);
+      server_writeToAll_start(fd);
+      server_writeToAll(fd, buff);
+      server_writeToAll(fd, "\n");
+      server_writeToAll_end(fd);
     }
-    buff[n] = '\0';
-    /* TODO: Add data to be sent to clients. */
-    fprintf(stderr, "Server: got message: '%s'\n", buff);
     return 0;
   }
+}
+
+/**
+ * server_writeToAll_start()
+ *
+ * Begin a corked write to all active sockets.
+ *
+ * @param efd An excluded socket file descriptor to not write to. Set to -1 if
+ * you want the message to be sent to all sockets.
+ **/
+void server_writeToAll_start(int efd){
+  int opt = 1;
+  for(int i = 0; i < FD_SETSIZE; ++i){
+    if(FD_ISSET(i, &active_fd_set)){
+      if(i >= 0 && i != socketfd && i != efd){
+        /* Set TCP to cork mode and prevent it from sending a packet */
+        setsockopt(i, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
+      }
+    }
+  }
+}
+
+/**
+ * server_writeToAll()
+ *
+ * Begin writing a packet to the client. NOTE: Messages are buffered in kernel
+ * space.
+ *
+ * @param efd An excluded socket file descriptor to not write to. Set to -1 if
+ * you want the message to be sent to all sockets.
+ **/
+void server_writeToAll(int efd, char* msg){
+  for(int i = 0; i < FD_SETSIZE; ++i){
+    if(FD_ISSET(i, &active_fd_set)){
+      if(i >= 0 && i != socketfd && i != efd){
+        server_writeToClient(i, msg);
+      }
+    }
+  }
+}
+
+/**
+ * server_writeToAll_end()
+ *
+ * Close a corked write to all active sockets, causing a flush write.
+ *
+ * @param efd An excluded socket file descriptor to not write to. Set to -1 if
+ * you want the message to be sent to all sockets.
+ **/
+void server_writeToAll_end(int efd){
+  int opt = 0;
+  for(int i = 0; i < FD_SETSIZE; ++i){
+    if(FD_ISSET(i, &active_fd_set)){
+      if(i >= 0 && i != socketfd && i != efd){
+        /* Set TCP to cork mode and prevent it from sending a packet */
+        setsockopt(i, SOL_TCP, TCP_CORK, &opt, sizeof(opt));
+      }
+    }
+  }
+}
+
+/**
+ * server_writeToClient()
+ *
+ * Write a message to the client. NOTE: See server_writeToClientStart() and
+ * server_writeToClientEnd() if sending multiple messages to a socket.
+ *
+ * @param fd The socket to be written to.
+ * @param msg The message to be sent.
+ **/
+void server_writeToClient(int fd, char* msg){
+  /* Send the data */
+  if(send(fd, msg, util_strLen(msg), 0) < 0){
+    perror("send");
+  }
+}
+
+/**
+ * server_disconnectClient()
+ *
+ * Disconnect a given client socket.
+ *
+ * @param fd The socket to be closed.
+ **/
+void server_disconnectClient(int fd){
+  shutdown(fd, SHUT_WR);
+  FD_CLR(fd, &active_fd_set);
 }
