@@ -1,5 +1,5 @@
 #define PORT 6666
-#define MAX_READ 80
+#define MAX_READ 512
 
 #define MSG_BANNER (\
 "| ------------------------------\n"  \
