@@ -22,6 +22,7 @@ void server_writeToAll_start(int efd);
 void server_writeToAll(int efd, char* msg);
 void server_writeToAll_end(int efd);
 void server_writeToClient(int fd, char* msg);
+void server_writeNoticeAll(int efd, char* notice, char* data);
 void server_disconnectClient(int fd);
 
 /* Variable declaration */
@@ -88,17 +89,14 @@ void server_service(){
           perror("accept");
           exit(EXIT_FAILURE);
         }
-        fprintf(
-          stderr,
-          "Server: connect from host %s::%hd\n",
-          inet_ntoa(clientName.sin_addr),
-          ntohs(clientName.sin_port)
-        );
         FD_SET(new, &active_fd_set);
         server_writeToClient(new, MSG_BANNER);
+        /* Send to all connected clients */
+        server_writeNoticeAll(new, "Connected", server_fdToIp(new));
       }else{
         /* Data arriving on an already-connected socket */
         if(server_readFromClient(i, maxClientRead) < 0){
+          /* Finally disconnected client */
           server_disconnectClient(i);
         }
       }
@@ -261,6 +259,22 @@ void server_writeToClient(int fd, char* msg){
   }
 }
 
+/* TODO */
+void server_writeNoticeAll(int efd, char* notice, char* data){
+  fprintf( stderr, "| %s -> %s\n", notice, data);
+  server_writeToAll_start(efd);
+  server_writeToAll(efd, "| ");
+  if(notice != NULL){
+    server_writeToAll(efd, notice);
+  }
+  if(data != NULL){
+    server_writeToAll(efd, " -> ");
+    server_writeToAll(efd, data);
+  }
+  server_writeToAll(efd, "\n");
+  server_writeToAll_end(efd);
+}
+
 /**
  * server_disconnectClient()
  *
@@ -269,6 +283,9 @@ void server_writeToClient(int fd, char* msg){
  * @param fd The socket to be closed.
  **/
 void server_disconnectClient(int fd){
+  /* Send to all connected clients */
+  server_writeNoticeAll(fd, "Disconnected", server_fdToIp(fd));
+  /* Finally, flush and disconnect */
   shutdown(fd, SHUT_WR);
   FD_CLR(fd, &active_fd_set);
 }
