@@ -16,6 +16,10 @@
 #include "config.h"
 #include "util.h"
 
+#ifndef SOL_TCP
+  #define SOL_TCP IPPROTO_TCP
+#endif
+
 /* Private function declaration */
 int server_readFromClient(int fd, int maxRead);
 char* server_fdToIp(int fd);
