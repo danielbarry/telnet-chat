@@ -136,6 +136,20 @@ int server_readFromClient(int fd, int maxRead){
         case '?' :
           server_writeToClient(fd, MSG_HELP);
           break;
+        case 'l' :
+          server_writeToClient_start(fd);
+          server_writeToClient(fd, "| IP list:\n");
+          for(int i = 0; i < FD_SETSIZE; ++i){
+            if(FD_ISSET(i, &active_fd_set)){
+              if(i >= 0 && i != socketfd){
+                server_writeToClient(fd, "| - ");
+                server_writeToClient(fd, server_fdToIp(i));
+                server_writeToClient(fd, "\n");
+              }
+            }
+          }
+          server_writeToClient_end(fd);
+          break;
         case 'q' :
           server_writeToClient(fd, MSG_EXIT);
           server_disconnectClient(fd);

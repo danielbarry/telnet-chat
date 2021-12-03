@@ -13,6 +13,7 @@
 "| Commands are as follows:\n"        \
 "| /b       - Display the banner\n"   \
 "| /h or /? - Display this help\n"    \
+"| /l       - List connected IPs\n"   \
 "| /q       - Quit the connection\n"  \
 )
 #define MSG_EXIT (\
