@@ -76,11 +76,11 @@ void server_service(){
   }
   /* Service all the sockets with input pending */
   struct sockaddr_in clientName;
+  socklen_t size = sizeof(clientName);
   for(int i = 0; i < FD_SETSIZE; ++i){
     if(FD_ISSET(i, &read_fd_set)){
       if(i == socketfd){
         /* Connection request on original socket */
-        socklen_t size = sizeof(clientName);
         int new = accept(socketfd, (struct sockaddr*)&clientName, &size);
         if(new < 0){
           socketfd = -1;
