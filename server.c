@@ -103,7 +103,6 @@ void server_service(){
       }
     }
   }
-  /* TODO: Service all the sockets with output data. */
 }
 
 /**
