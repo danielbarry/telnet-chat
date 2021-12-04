@@ -1,21 +1,22 @@
 #define PORT 6666
 #define MAX_READ 512
 
+#define MSG_PRE ":"
 #define MSG_BANNER (\
-"| ------------------------------\n"  \
-"| Welcome to Telnet Chat!\n"         \
-"| NOTE: All IPs displayed in chat!\n"\
-"| WARN: All data unencrypted!\n"     \
-"| Type `/h` for more info.\n"        \
-"| ------------------------------\n"  \
+MSG_PRE "--------------------------------\n"\
+MSG_PRE "Welcome to Telnet Chat!\n"         \
+MSG_PRE "NOTE: All IPs displayed in chat!\n"\
+MSG_PRE "WARN: All data unencrypted!\n"     \
+MSG_PRE "Type `/h` for more info.\n"        \
+MSG_PRE "--------------------------------\n"\
 )
 #define MSG_HELP (\
-"| Commands are as follows:\n"        \
-"| /b       - Display the banner\n"   \
-"| /h or /? - Display this help\n"    \
-"| /l       - List connected IPs\n"   \
-"| /q       - Quit the connection\n"  \
+MSG_PRE "Commands are as follows:\n"        \
+MSG_PRE "/b       - Display the banner\n"   \
+MSG_PRE "/h or /? - Display this help\n"    \
+MSG_PRE "/l       - List connected IPs\n"   \
+MSG_PRE "/q       - Quit the connection\n"  \
 )
 #define MSG_EXIT (\
-"| Have a nice trip!\n"               \
+MSG_PRE "Have a nice trip!\n"               \
 )
