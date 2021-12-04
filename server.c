@@ -129,7 +129,7 @@ int server_readFromClient(int fd, int maxRead){
     /* End-of-file */
     return -1;
   }else{
-    /* Decide what to do with data */
+    /* Check for commands */
     if(buff[0] == '/'){
       switch(buff[1]){
         case 'b' :
@@ -141,11 +141,13 @@ int server_readFromClient(int fd, int maxRead){
           break;
         case 'l' :
           server_writeToClient_start(fd);
-          server_writeToClient(fd, "| IP list:\n");
+          server_writeToClient(fd, MSG_PRE);
+          server_writeToClient(fd, "IP list:\n");
           for(int i = 0; i < FD_SETSIZE; ++i){
             if(FD_ISSET(i, &active_fd_set)){
               if(i >= 0 && i != socketfd){
-                server_writeToClient(fd, "| - ");
+                server_writeToClient(fd, MSG_PRE);
+                server_writeToClient(fd, "- ");
                 server_writeToClient(fd, server_fdToIp(i));
                 server_writeToClient(fd, "\n");
               }
@@ -161,6 +163,7 @@ int server_readFromClient(int fd, int maxRead){
           /* Do nothing */
           break;
       }
+    /* If not a command, relay message to other users */
     }else if(buff[0] >= ' ' && buff[0] <= '~'){
       /* Sanitize data to ASCII and remove line endings */
       char r = '\0';
@@ -178,6 +181,7 @@ int server_readFromClient(int fd, int maxRead){
       fprintf(stderr, "%s%s: %s\n", MSG_PRE, ip, buff);
       /* Send to all connected clients */
       server_writeToAll_start(fd);
+      server_writeToAll(fd, MSG_PRE);
       server_writeToAll(fd, ip);
       server_writeToAll(fd, ": ");
       server_writeToAll(fd, buff);
@@ -285,9 +289,9 @@ void server_writeToClient_end(int fd){
 
 /* TODO */
 void server_writeNoticeAll(int efd, char* notice, char* data){
-  fprintf( stderr, "| %s -> %s\n", notice, data);
+  fprintf(stderr, "%s%s -> %s\n", MSG_PRE, notice, data);
   server_writeToAll_start(efd);
-  server_writeToAll(efd, "| ");
+  server_writeToAll(efd, MSG_PRE);
   if(notice != NULL){
     server_writeToAll(efd, notice);
   }
