@@ -126,7 +126,6 @@ int server_readFromClient(int fd, int maxRead){
   if(n < 0){
     /* Read error */
     perror("read");
-    exit(EXIT_FAILURE);
   }else if(n == 0){
     /* End-of-file */
     return -1;
