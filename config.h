@@ -1,5 +1,7 @@
 #define PORT 6666
 #define MAX_READ 512
+/* NOTE: Timeout is 24 hours. */
+#define TIMEOUT_MS (24 * 60 * 60 * 1000)
 
 #define MSG_PRE ":"
 #define MSG_BANNER (\

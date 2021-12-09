@@ -93,6 +93,8 @@ void server_service(){
           perror("accept");
           exit(EXIT_FAILURE);
         }
+        int timeout = TIMEOUT_MS;
+        setsockopt(new, SOL_TCP, TCP_USER_TIMEOUT, (char*)&timeout, sizeof(timeout));
         FD_SET(new, &active_fd_set);
         server_writeToClient(new, MSG_BANNER);
         /* Send to all connected clients */
