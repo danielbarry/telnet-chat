@@ -12,4 +12,4 @@ server.o : server.c
 	cc $(FLAGS) -c server.c
 
 clean :
-	rm main.o server.o
+	-rm main.o server.o server
